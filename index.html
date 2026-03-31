@@ -1,0 +1,2379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CliniqAI — Clinical Intelligence Assistant</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
+<style>
+  :root {
+    --bg: #0a0d12;
+    --surface: #111620;
+    --surface2: #161c28;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --accent: #4fffb0;
+    --accent2: #00d4ff;
+    --accent3: #ff6b6b;
+    --text: #e8edf5;
+    --text2: #8a94a8;
+    --text3: #5a6478;
+    --gold: #f5c842;
+    --radius: 16px;
+    --radius-sm: 10px;
+    --shadow: 0 24px 80px rgba(0,0,0,0.6);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { font-size: 16px; scroll-behavior: smooth; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── NOISE OVERLAY ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none; z-index: 999;
+  }
+
+  /* ══════════════════════════════════════
+     PAGES
+  ══════════════════════════════════════ */
+  .page { display: none; }
+  .page.active { display: flex; flex-direction: column; min-height: 100vh; }
+
+  /* ══════════════════════════════════════
+     LANDING PAGE
+  ══════════════════════════════════════ */
+  #page-landing {
+    position: relative;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 2rem;
+    overflow: hidden;
+  }
+
+  .landing-bg {
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 50% 0%, rgba(79,255,176,0.08) 0%, transparent 70%),
+      radial-gradient(ellipse 60% 40% at 80% 100%, rgba(0,212,255,0.06) 0%, transparent 60%);
+    z-index: 0;
+  }
+
+  .landing-grid {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+    background-size: 60px 60px;
+    z-index: 0;
+    mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black, transparent);
+  }
+
+  .landing-content {
+    position: relative; z-index: 1;
+    max-width: 720px;
+    animation: fadeUp 0.8s ease both;
+  }
+
+  .landing-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(79,255,176,0.08);
+    border: 1px solid rgba(79,255,176,0.2);
+    border-radius: 100px;
+    padding: 6px 16px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 2rem;
+  }
+
+  .landing-badge .dot {
+    width: 6px; height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: pulse 2s ease infinite;
+  }
+
+  .landing-logo {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(3rem, 8vw, 5.5rem);
+    letter-spacing: -0.02em;
+    line-height: 1;
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.6) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .landing-logo span {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .landing-tagline {
+    font-size: clamp(1rem, 2.5vw, 1.2rem);
+    color: var(--text2);
+    font-weight: 300;
+    line-height: 1.7;
+    max-width: 520px;
+    margin: 0 auto 3rem;
+  }
+
+  .landing-cta-group {
+    display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
+    margin-bottom: 3.5rem;
+  }
+
+  .btn-primary {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: var(--accent);
+    color: #0a0d12;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 500;
+    padding: 14px 28px;
+    border-radius: var(--radius-sm);
+    border: none; cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    letter-spacing: 0.01em;
+  }
+
+  .btn-primary:hover {
+    background: #5fffbd;
+    transform: translateY(-1px);
+    box-shadow: 0 12px 32px rgba(79,255,176,0.3);
+  }
+
+  .btn-ghost {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: transparent;
+    color: var(--text2);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 400;
+    padding: 14px 28px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border2);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+  }
+
+  .btn-ghost:hover {
+    background: var(--surface);
+    color: var(--text);
+    border-color: var(--border2);
+  }
+
+  .landing-features {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    max-width: 700px;
+    margin: 0 auto 3rem;
+  }
+
+  .feat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    text-align: left;
+    transition: all 0.3s ease;
+  }
+
+  .feat-card:hover {
+    border-color: rgba(79,255,176,0.2);
+    background: var(--surface2);
+    transform: translateY(-2px);
+  }
+
+  .feat-icon {
+    width: 38px; height: 38px;
+    background: rgba(79,255,176,0.1);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 0.75rem;
+    font-size: 1.1rem;
+  }
+
+  .feat-card h4 {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+
+  .feat-card p {
+    font-size: 0.78rem;
+    color: var(--text3);
+    line-height: 1.5;
+  }
+
+  .landing-disclaimer {
+    font-size: 0.72rem;
+    color: var(--text3);
+    max-width: 500px;
+    margin: 0 auto;
+    line-height: 1.6;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border);
+  }
+
+  /* ══════════════════════════════════════
+     AUTH PAGE
+  ══════════════════════════════════════ */
+  #page-auth {
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #page-auth::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse 60% 50% at 50% 0%, rgba(79,255,176,0.06), transparent 70%);
+  }
+
+  .auth-card {
+    position: relative;
+    width: 100%;
+    max-width: 420px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 2.5rem;
+    box-shadow: var(--shadow);
+    animation: fadeUp 0.6s ease both;
+  }
+
+  .auth-brand {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 2rem;
+  }
+
+  .auth-brand-icon {
+    width: 38px; height: 38px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem;
+  }
+
+  .auth-brand-name {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.4rem;
+    background: linear-gradient(135deg, #fff, rgba(255,255,255,0.7));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .auth-title {
+    font-size: 1.5rem;
+    font-weight: 400;
+    margin-bottom: 0.5rem;
+    color: var(--text);
+  }
+
+  .auth-sub {
+    font-size: 0.85rem;
+    color: var(--text3);
+    margin-bottom: 2rem;
+  }
+
+  .tab-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+    background: var(--bg);
+    border-radius: var(--radius-sm);
+    padding: 4px;
+    margin-bottom: 1.75rem;
+  }
+
+  .tab-btn {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 500;
+    padding: 8px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: transparent;
+    color: var(--text3);
+  }
+
+  .tab-btn.active {
+    background: var(--surface2);
+    color: var(--text);
+  }
+
+  .form-group { margin-bottom: 1rem; }
+
+  .form-label {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--text2);
+    margin-bottom: 6px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .form-input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    padding: 12px 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .form-input:focus { border-color: rgba(79,255,176,0.4); }
+
+  .form-input::placeholder { color: var(--text3); }
+
+  select.form-input { appearance: none; cursor: pointer; }
+
+  .role-select-wrapper { position: relative; }
+
+  .role-select-wrapper::after {
+    content: '▾';
+    position: absolute; right: 14px; top: 50%;
+    transform: translateY(-50%);
+    color: var(--text3);
+    pointer-events: none;
+  }
+
+  .btn-full {
+    width: 100%;
+    justify-content: center;
+    margin-top: 1.5rem;
+  }
+
+  .auth-footer {
+    margin-top: 1.5rem;
+    text-align: center;
+    font-size: 0.78rem;
+    color: var(--text3);
+  }
+
+  .auth-footer a {
+    color: var(--accent);
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .divider {
+    display: flex; align-items: center; gap: 12px;
+    margin: 1.5rem 0;
+    color: var(--text3);
+    font-size: 0.75rem;
+  }
+
+  .divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ══════════════════════════════════════
+     APP SHELL
+  ══════════════════════════════════════ */
+  #page-app {
+    flex-direction: row;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    width: 260px;
+    flex-shrink: 0;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+    transition: width 0.3s ease;
+  }
+
+  .sidebar.collapsed { width: 64px; }
+
+  .sidebar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 1rem;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .sidebar-brand {
+    display: flex; align-items: center; gap: 10px;
+    overflow: hidden;
+  }
+
+  .sb-icon {
+    width: 32px; height: 32px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+  }
+
+  .sb-name {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.1rem;
+    white-space: nowrap;
+    overflow: hidden;
+    transition: opacity 0.2s;
+    background: linear-gradient(135deg, #fff, rgba(255,255,255,0.7));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .sidebar.collapsed .sb-name { opacity: 0; width: 0; }
+
+  .collapse-btn {
+    background: transparent;
+    border: none;
+    color: var(--text3);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 6px;
+    display: flex;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+
+  .collapse-btn:hover { background: var(--surface2); color: var(--text); }
+
+  .new-chat-btn {
+    margin: 1rem;
+    display: flex; align-items: center; gap: 8px;
+    background: rgba(79,255,176,0.08);
+    border: 1px dashed rgba(79,255,176,0.25);
+    border-radius: var(--radius-sm);
+    color: var(--accent);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 500;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    overflow: hidden;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .new-chat-btn:hover {
+    background: rgba(79,255,176,0.12);
+    border-color: rgba(79,255,176,0.4);
+  }
+
+  .sidebar.collapsed .new-chat-btn { justify-content: center; padding: 10px 0; }
+  .sidebar.collapsed .new-chat-label { display: none; }
+
+  .sidebar-section {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 0.5rem 0.5rem;
+    scrollbar-width: thin;
+    scrollbar-color: var(--surface2) transparent;
+  }
+
+  .sidebar-section::-webkit-scrollbar { width: 3px; }
+  .sidebar-section::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 3px; }
+
+  .section-label {
+    font-size: 0.65rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text3);
+    padding: 0.75rem 0.5rem 0.5rem;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
+  .sidebar.collapsed .section-label { opacity: 0; }
+
+  .chat-item {
+    display: flex; align-items: center; gap: 9px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  .chat-item:hover { background: var(--surface2); }
+  .chat-item.active { background: rgba(79,255,176,0.08); }
+
+  .chat-item-icon { font-size: 0.85rem; flex-shrink: 0; }
+
+  .chat-item-text {
+    font-size: 0.8rem;
+    color: var(--text2);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: opacity 0.2s;
+  }
+
+  .chat-item.active .chat-item-text { color: var(--accent); }
+  .sidebar.collapsed .chat-item-text { opacity: 0; width: 0; }
+
+  .nav-section {
+    padding: 0 0.5rem;
+    flex-shrink: 0;
+    border-top: 1px solid var(--border);
+    padding-top: 0.5rem;
+  }
+
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s;
+    font-size: 0.82rem;
+    color: var(--text2);
+    overflow: hidden;
+    white-space: nowrap;
+    margin-bottom: 2px;
+  }
+
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active { background: var(--surface2); color: var(--text); }
+
+  .nav-icon { font-size: 1rem; flex-shrink: 0; }
+  .nav-label { transition: opacity 0.2s; }
+  .sidebar.collapsed .nav-label { opacity: 0; width: 0; }
+
+  .user-zone {
+    padding: 0.75rem;
+    border-top: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px;
+    flex-shrink: 0;
+    overflow: hidden;
+  }
+
+  .user-avatar {
+    width: 32px; height: 32px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #fff;
+    flex-shrink: 0;
+  }
+
+  .user-info { overflow: hidden; transition: opacity 0.2s; }
+  .user-name { font-size: 0.8rem; font-weight: 500; color: var(--text); white-space: nowrap; }
+  .user-role { font-size: 0.7rem; color: var(--text3); white-space: nowrap; }
+  .sidebar.collapsed .user-info { opacity: 0; width: 0; }
+
+  /* ── MAIN AREA ── */
+  .main-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* ── TOP BAR ── */
+  .topbar {
+    height: 58px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1.5rem;
+    flex-shrink: 0;
+    background: rgba(10,13,18,0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .topbar-left {
+    display: flex; align-items: center; gap: 12px;
+  }
+
+  .topbar-title {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text);
+  }
+
+  .topbar-subtitle {
+    font-size: 0.75rem;
+    color: var(--text3);
+  }
+
+  .topbar-right {
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .icon-btn {
+    width: 34px; height: 34px;
+    display: flex; align-items: center; justify-content: center;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text3);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.9rem;
+  }
+
+  .icon-btn:hover { background: var(--surface2); color: var(--text); border-color: var(--border2); }
+
+  .status-pill {
+    display: flex; align-items: center; gap: 6px;
+    background: rgba(79,255,176,0.08);
+    border: 1px solid rgba(79,255,176,0.2);
+    border-radius: 100px;
+    padding: 5px 12px;
+    font-size: 0.72rem;
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  .status-dot {
+    width: 6px; height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: pulse 2s ease infinite;
+  }
+
+  /* ── CHAT VIEWS ── */
+  .view { display: none; flex: 1; overflow: hidden; flex-direction: column; }
+  .view.active { display: flex; }
+
+  /* Welcome / empty state */
+  .welcome-view {
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    text-align: center;
+    overflow-y: auto;
+  }
+
+  .welcome-inner { max-width: 680px; animation: fadeUp 0.6s ease both; }
+
+  .welcome-icon {
+    width: 72px; height: 72px;
+    background: linear-gradient(135deg, rgba(79,255,176,0.15), rgba(0,212,255,0.1));
+    border: 1px solid rgba(79,255,176,0.2);
+    border-radius: 20px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2rem;
+    margin: 0 auto 1.5rem;
+  }
+
+  .welcome-heading {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(1.6rem, 4vw, 2.4rem);
+    margin-bottom: 0.75rem;
+    background: linear-gradient(135deg, #fff, rgba(255,255,255,0.6));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .welcome-sub {
+    font-size: 0.9rem;
+    color: var(--text3);
+    line-height: 1.7;
+    margin-bottom: 2.5rem;
+  }
+
+  .prompts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 0.75rem;
+    text-align: left;
+  }
+
+  .prompt-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem 1.1rem;
+    cursor: pointer;
+    transition: all 0.25s ease;
+  }
+
+  .prompt-card:hover {
+    border-color: rgba(79,255,176,0.25);
+    background: var(--surface2);
+    transform: translateY(-1px);
+  }
+
+  .prompt-card-tag {
+    font-size: 0.65rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.4rem;
+  }
+
+  .prompt-card h5 {
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--text);
+    line-height: 1.4;
+  }
+
+  /* Chat messages */
+  .chat-view { padding: 0; }
+
+  .messages-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.5rem;
+    scrollbar-width: thin;
+    scrollbar-color: var(--surface2) transparent;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  .messages-area::-webkit-scrollbar { width: 4px; }
+  .messages-area::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 4px; }
+
+  .msg {
+    display: flex;
+    gap: 12px;
+    animation: fadeUp 0.3s ease both;
+  }
+
+  .msg.user { justify-content: flex-end; }
+
+  .msg-avatar {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .msg.assistant .msg-avatar {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #0a0d12;
+  }
+
+  .msg.user .msg-avatar {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #fff;
+    order: 1;
+  }
+
+  .msg-body { max-width: min(680px, 85%); }
+
+  .msg.user .msg-body {
+    background: rgba(79,255,176,0.08);
+    border: 1px solid rgba(79,255,176,0.15);
+    border-radius: 16px 4px 16px 16px;
+    padding: 12px 16px;
+    font-size: 0.88rem;
+    line-height: 1.6;
+    color: var(--text);
+  }
+
+  .msg.assistant .msg-body {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px 16px 16px 16px;
+    padding: 1.25rem 1.5rem;
+    font-size: 0.875rem;
+    line-height: 1.7;
+  }
+
+  /* Structured response */
+  .response-section {
+    margin-bottom: 1.25rem;
+  }
+
+  .response-section:last-child { margin-bottom: 0; }
+
+  .response-section-header {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.6rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .rs-summary .response-section-header { color: var(--accent); }
+  .rs-differential .response-section-header { color: #a78bfa; }
+  .rs-investigations .response-section-header { color: var(--accent2); }
+  .rs-management .response-section-header { color: var(--gold); }
+  .rs-redflags .response-section-header { color: var(--accent3); }
+  .rs-references .response-section-header { color: var(--text3); }
+
+  .rs-icon {
+    width: 20px; height: 20px;
+    border-radius: 5px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.7rem;
+  }
+
+  .rs-summary .rs-icon { background: rgba(79,255,176,0.15); }
+  .rs-differential .rs-icon { background: rgba(167,139,250,0.15); }
+  .rs-investigations .rs-icon { background: rgba(0,212,255,0.15); }
+  .rs-management .rs-icon { background: rgba(245,200,66,0.15); }
+  .rs-redflags .rs-icon { background: rgba(255,107,107,0.15); }
+  .rs-references .rs-icon { background: rgba(90,100,120,0.2); }
+
+  .response-section-body {
+    font-size: 0.85rem;
+    color: var(--text2);
+    line-height: 1.7;
+  }
+
+  .response-section-body ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .response-section-body ul li {
+    display: flex; align-items: flex-start; gap: 8px;
+  }
+
+  .response-section-body ul li::before {
+    content: '·';
+    color: var(--text3);
+    font-size: 1.2rem;
+    line-height: 1.3;
+    flex-shrink: 0;
+  }
+
+  .redflag-item {
+    display: flex; align-items: flex-start; gap: 8px;
+    background: rgba(255,107,107,0.05);
+    border: 1px solid rgba(255,107,107,0.15);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 0.82rem;
+    color: #ffb3b3;
+    margin-bottom: 4px;
+  }
+
+  .redflag-item::before {
+    content: '⚠';
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    margin-top: 1px;
+  }
+
+  .msg-meta {
+    display: flex; align-items: center; gap: 12px;
+    margin-top: 8px;
+  }
+
+  .msg-time {
+    font-size: 0.68rem;
+    color: var(--text3);
+  }
+
+  .msg-actions {
+    display: flex; gap: 4px;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .msg.assistant:hover .msg-actions { opacity: 1; }
+
+  .msg-action-btn {
+    background: transparent;
+    border: none;
+    color: var(--text3);
+    cursor: pointer;
+    padding: 3px 6px;
+    border-radius: 5px;
+    font-size: 0.75rem;
+    transition: all 0.15s;
+  }
+
+  .msg-action-btn:hover { background: var(--surface2); color: var(--text2); }
+
+  /* Typing indicator */
+  .typing-indicator {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    animation: fadeUp 0.3s ease both;
+  }
+
+  .typing-dots {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px 16px 16px 16px;
+    padding: 14px 18px;
+    display: flex; gap: 5px; align-items: center;
+  }
+
+  .typing-dot {
+    width: 7px; height: 7px;
+    background: var(--text3);
+    border-radius: 50%;
+    animation: bounce 1.4s ease infinite;
+  }
+
+  .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+  /* ── INPUT AREA ── */
+  .input-area {
+    border-top: 1px solid var(--border);
+    padding: 1rem 1.5rem 1.25rem;
+    flex-shrink: 0;
+    background: rgba(10,13,18,0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .input-disclaimer {
+    font-size: 0.68rem;
+    color: var(--text3);
+    text-align: center;
+    margin-bottom: 0.75rem;
+    display: flex; align-items: center; gap: 6px;
+    justify-content: center;
+  }
+
+  .input-box {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 10px 10px 10px 16px;
+    transition: border-color 0.2s;
+    max-width: 860px;
+    margin: 0 auto;
+  }
+
+  .input-box:focus-within {
+    border-color: rgba(79,255,176,0.3);
+    box-shadow: 0 0 0 3px rgba(79,255,176,0.05);
+  }
+
+  .input-textarea {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    resize: none;
+    outline: none;
+    min-height: 24px;
+    max-height: 160px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--surface2) transparent;
+  }
+
+  .input-textarea::placeholder { color: var(--text3); }
+
+  .input-actions {
+    display: flex; gap: 6px; align-items: flex-end;
+  }
+
+  .send-btn {
+    width: 36px; height: 36px;
+    background: var(--accent);
+    border: none;
+    border-radius: 9px;
+    color: #0a0d12;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.95rem;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+
+  .send-btn:hover { background: #5fffbd; transform: scale(1.05); }
+  .send-btn:disabled { background: var(--surface2); color: var(--text3); cursor: not-allowed; transform: none; }
+
+  /* ══════════════════════════════════════
+     ADMIN / SETTINGS / PATIENTS PANELS
+  ══════════════════════════════════════ */
+  .panel-view {
+    flex: 1;
+    overflow-y: auto;
+    padding: 2rem;
+    scrollbar-width: thin;
+    scrollbar-color: var(--surface2) transparent;
+  }
+
+  .panel-header {
+    margin-bottom: 2rem;
+  }
+
+  .panel-header h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.8rem;
+    color: var(--text);
+    margin-bottom: 0.4rem;
+  }
+
+  .panel-header p {
+    font-size: 0.85rem;
+    color: var(--text3);
+  }
+
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    transition: all 0.2s;
+  }
+
+  .stat-card:hover { border-color: var(--border2); }
+
+  .stat-label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text3);
+    margin-bottom: 0.5rem;
+  }
+
+  .stat-value {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2rem;
+    color: var(--text);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .stat-change {
+    font-size: 0.75rem;
+    color: var(--accent);
+  }
+
+  .section-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .section-card-title {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 1rem;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .table-wrap { overflow-x: auto; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+  }
+
+  th {
+    text-align: left;
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text3);
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  td {
+    padding: 10px 12px;
+    color: var(--text2);
+    border-bottom: 1px solid var(--border);
+  }
+
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+
+  .badge {
+    display: inline-flex; align-items: center;
+    padding: 3px 8px;
+    border-radius: 100px;
+    font-size: 0.68rem;
+    font-weight: 500;
+  }
+
+  .badge-green { background: rgba(79,255,176,0.1); color: var(--accent); }
+  .badge-blue { background: rgba(0,212,255,0.1); color: var(--accent2); }
+  .badge-yellow { background: rgba(245,200,66,0.1); color: var(--gold); }
+  .badge-red { background: rgba(255,107,107,0.1); color: var(--accent3); }
+
+  /* Settings */
+  .settings-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .settings-row:last-child { border-bottom: none; }
+
+  .settings-info h4 { font-size: 0.85rem; font-weight: 500; color: var(--text); margin-bottom: 2px; }
+  .settings-info p { font-size: 0.75rem; color: var(--text3); }
+
+  .toggle {
+    position: relative;
+    width: 42px; height: 24px;
+  }
+
+  .toggle input { display: none; }
+
+  .toggle-slider {
+    position: absolute; inset: 0;
+    background: var(--surface2);
+    border-radius: 100px;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+
+  .toggle-slider::before {
+    content: '';
+    position: absolute;
+    width: 18px; height: 18px;
+    background: var(--text3);
+    border-radius: 50%;
+    left: 3px; top: 3px;
+    transition: 0.2s;
+  }
+
+  .toggle input:checked + .toggle-slider { background: rgba(79,255,176,0.3); }
+  .toggle input:checked + .toggle-slider::before { background: var(--accent); transform: translateX(18px); }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(4px);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 20px;
+    padding: 2rem;
+    width: 90%;
+    max-width: 460px;
+    animation: fadeUp 0.3s ease both;
+  }
+
+  .modal h3 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.3rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .modal p {
+    font-size: 0.84rem;
+    color: var(--text3);
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+  }
+
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+
+  /* ── API KEY SETUP ── */
+  .api-notice {
+    background: rgba(245,200,66,0.06);
+    border: 1px solid rgba(245,200,66,0.2);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    font-size: 0.8rem;
+    color: #f5d87a;
+    line-height: 1.6;
+    margin-bottom: 1rem;
+    display: flex; gap: 10px;
+  }
+
+  /* ══════════════════════════════════════
+     ANIMATIONS
+  ══════════════════════════════════════ */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  @keyframes bounce {
+    0%, 80%, 100% { transform: translateY(0); }
+    40% { transform: translateY(-6px); }
+  }
+
+  /* ══════════════════════════════════════
+     RESPONSIVE
+  ══════════════════════════════════════ */
+  @media (max-width: 768px) {
+    .sidebar {
+      position: fixed; left: 0; top: 0; bottom: 0;
+      z-index: 50;
+      transform: translateX(-100%);
+      width: 260px !important;
+    }
+
+    .sidebar.mobile-open { transform: translateX(0); }
+
+    .mobile-menu-btn { display: flex !important; }
+
+    .main-area { width: 100%; }
+
+    .prompts-grid { grid-template-columns: 1fr 1fr; }
+  }
+
+  .mobile-menu-btn { display: none; }
+
+  .mobile-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 49;
+  }
+
+  .mobile-overlay.open { display: block; }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════
+     LANDING PAGE
+══════════════════════════════════ -->
+<div id="page-landing" class="page active">
+  <div class="landing-bg"></div>
+  <div class="landing-grid"></div>
+  <div class="landing-content">
+    <div class="landing-badge">
+      <span class="dot"></span>
+      Clinical AI — For Healthcare Professionals
+    </div>
+    <div class="landing-logo">Cliniq<span>AI</span></div>
+    <p class="landing-tagline">
+      Evidence-based clinical intelligence for doctors, nurses,<br/>
+      pharmacists &amp; medical students — structured answers, instantly.
+    </p>
+    <div class="landing-cta-group">
+      <button class="btn-primary" onclick="showPage('page-auth', 'login')">
+        <i class="fas fa-user-md"></i> Get Started
+      </button>
+      <button class="btn-ghost" onclick="showPage('page-auth', 'demo')">
+        <i class="fas fa-play"></i> View Demo
+      </button>
+    </div>
+    <div class="landing-features">
+      <div class="feat-card">
+        <div class="feat-icon"><i class="fas fa-dna"></i></div>
+        <h4>Differential Diagnosis</h4>
+        <p>Ranked differentials with clinical reasoning</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon"><i class="fas fa-clipboard-list"></i></div>
+        <h4>Management Plans</h4>
+        <p>Step-by-step treatment protocols</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon"><i class="fas fa-microscope"></i></div>
+        <h4>Investigations</h4>
+        <p>Recommended labs, imaging &amp; workup</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon"><i class="fas fa-exclamation-triangle"></i></div>
+        <h4>Red Flags</h4>
+        <p>Critical warning signs you must not miss</p>
+      </div>
+    </div>
+    <p class="landing-disclaimer">
+      <i class="fas fa-lock"></i> CliniqAI is a clinical decision support tool intended for use by trained healthcare professionals. It is not a substitute for clinical judgment, direct examination, or established guidelines. Always verify information independently.
+    </p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     AUTH PAGE
+══════════════════════════════════ -->
+<div id="page-auth" class="page">
+  <div class="auth-card">
+    <div class="auth-brand">
+      <div class="auth-brand-icon"><i class="fas fa-user-md"></i></div>
+      <div class="auth-brand-name">CliniqAI</div>
+    </div>
+
+    <div class="tab-row">
+      <button class="tab-btn active" id="tab-login" onclick="switchAuthTab('login')">Sign In</button>
+      <button class="tab-btn" id="tab-register" onclick="switchAuthTab('register')">Register</button>
+    </div>
+
+    <!-- Login Form -->
+    <div id="form-login">
+      <div class="api-notice">
+        <i class="fas fa-cog"></i> <span>You'll need an OpenAI API key to use AI features. Set it in Settings after login.</span>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <input type="email" class="form-input" placeholder="doctor@hospital.com" id="login-email"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input type="password" class="form-input" placeholder="••••••••" id="login-password"/>
+      </div>
+      <button class="btn-primary btn-full" onclick="doLogin()">
+        Sign In to CliniqAI →
+      </button>
+    </div>
+
+    <!-- Register Form -->
+    <div id="form-register" style="display:none">
+      <div class="form-group">
+        <label class="form-label">Full Name</label>
+        <input type="text" class="form-input" placeholder="Dr. Sarah Ahmed" id="reg-name"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <input type="email" class="form-input" placeholder="doctor@hospital.com" id="reg-email"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Role</label>
+        <div class="role-select-wrapper">
+          <select class="form-input" id="reg-role">
+            <option value="">Select your role…</option>
+            <option value="doctor">Physician / Doctor</option>
+            <option value="nurse">Nurse / Nurse Practitioner</option>
+            <option value="pharmacist">Pharmacist</option>
+            <option value="student">Medical Student</option>
+            <option value="other">Other Healthcare Professional</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input type="password" class="form-input" placeholder="••••••••" id="reg-password"/>
+      </div>
+      <button class="btn-primary btn-full" onclick="doRegister()">
+        Create Account →
+      </button>
+    </div>
+
+    <div class="auth-footer">
+      <a onclick="showPage('page-landing')">← Back to home</a>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     APP SHELL
+══════════════════════════════════ -->
+<div id="page-app" class="page">
+
+  <!-- Mobile overlay -->
+  <div class="mobile-overlay" id="mobile-overlay" onclick="closeMobileSidebar()"></div>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-brand">
+        <div class="sb-icon"><i class="fas fa-user-md"></i></div>
+        <div class="sb-name">CliniqAI</div>
+      </div>
+      <button class="collapse-btn" onclick="toggleSidebar()" title="Collapse sidebar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 19l-7-7 7-7M18 19l-7-7 7-7"/></svg>
+      </button>
+    </div>
+
+    <button class="new-chat-btn" onclick="newChat()">
+      <span style="font-size:1rem;flex-shrink:0"><i class="fas fa-edit"></i></span>
+      <span class="new-chat-label">New Consultation</span>
+    </button>
+
+    <div class="sidebar-section">
+      <div class="section-label">Recent</div>
+      <div class="chat-item active" onclick="switchChatView('chat')">
+        <span class="chat-item-icon"><i class="fas fa-comments"></i></span>
+        <span class="chat-item-text" id="current-chat-title">New Consultation</span>
+      </div>
+      <div id="chat-history"></div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-item" id="nav-chat" onclick="switchNav('chat')">
+        <span class="nav-icon"><i class="fas fa-comments"></i></span>
+        <span class="nav-label">Consultations</span>
+      </div>
+      <div class="nav-item" id="nav-admin" onclick="switchNav('admin')">
+        <span class="nav-icon"><i class="fas fa-chart-bar"></i></span>
+        <span class="nav-label">Dashboard</span>
+      </div>
+      <div class="nav-item" id="nav-settings" onclick="switchNav('settings')">
+        <span class="nav-icon"><i class="fas fa-cog"></i></span>
+        <span class="nav-label">Settings</span>
+      </div>
+      <div class="nav-item" onclick="confirmLogout()">
+        <span class="nav-icon"><i class="fas fa-door-open"></i></span>
+        <span class="nav-label">Sign Out</span>
+      </div>
+    </div>
+
+    <div class="user-zone">
+      <div class="user-avatar" id="user-avatar">DR</div>
+      <div class="user-info">
+        <div class="user-name" id="user-name-display">Dr. User</div>
+        <div class="user-role" id="user-role-display">Physician</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main-area">
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <div class="topbar-left">
+        <button class="icon-btn mobile-menu-btn" onclick="openMobileSidebar()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <div>
+          <div class="topbar-title" id="topbar-title">Clinical Consultation</div>
+          <div class="topbar-subtitle" id="topbar-sub">Ask any clinical question</div>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <div class="status-pill" id="ai-status">
+          <span class="status-dot"></span>
+          AI Ready
+        </div>
+        <button class="icon-btn" onclick="switchNav('settings')" title="Settings"><i class="fas fa-cog"></i></button>
+      </div>
+    </div>
+
+    <!-- CHAT VIEW: Welcome -->
+    <div class="view welcome-view active" id="view-welcome">
+      <div class="welcome-inner">
+        <div class="welcome-icon"><i class="fas fa-user-md"></i></div>
+        <h2 class="welcome-heading">Clinical Intelligence<br/>at Your Fingertips</h2>
+        <p class="welcome-sub">Ask any clinical question — from differential diagnosis to drug interactions — and receive structured, evidence-informed responses tailored for healthcare professionals.</p>
+        <div class="prompts-grid">
+          <div class="prompt-card" onclick="usePrompt('A 45-year-old male presents with crushing chest pain radiating to the left arm, diaphoresis and nausea. What is the differential diagnosis and initial management?')">
+            <div class="prompt-card-tag">Cardiology</div>
+            <h5>Chest pain differential in middle-aged male with diaphoresis</h5>
+          </div>
+          <div class="prompt-card" onclick="usePrompt('Child with high fever, neck stiffness, photophobia and petechial rash. What is the most likely diagnosis and what are the red flags?')">
+            <div class="prompt-card-tag">Paediatrics</div>
+            <h5>Fever, neck stiffness &amp; petechiae in a child</h5>
+          </div>
+          <div class="prompt-card" onclick="usePrompt('Patient on warfarin presents with sudden onset severe headache. What investigations should be done urgently?')">
+            <div class="prompt-card-tag">Neurology</div>
+            <h5>Thunderclap headache in anticoagulated patient</h5>
+          </div>
+          <div class="prompt-card" onclick="usePrompt('What are the key drug interactions and monitoring parameters for a patient starting metformin and lisinopril for type 2 diabetes with hypertension?')">
+            <div class="prompt-card-tag">Pharmacology</div>
+            <h5>Drug interactions: metformin + lisinopril</h5>
+          </div>
+          <div class="prompt-card" onclick="usePrompt('32-year-old female with 3 days of dysuria, frequency, suprapubic pain and cloudy urine. No fever. How to manage?')">
+            <div class="prompt-card-tag">Urology</div>
+            <h5>UTI symptoms in young female — management plan</h5>
+          </div>
+          <div class="prompt-card" onclick="usePrompt('Explain the stepwise management of acute severe asthma in an adult in the emergency setting.')">
+            <div class="prompt-card-tag">Emergency</div>
+            <h5>Acute severe asthma — emergency protocol</h5>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHAT VIEW: Active -->
+    <div class="view chat-view" id="view-chat">
+      <div class="messages-area" id="messages-area"></div>
+      <div class="input-area">
+        <div class="input-disclaimer">
+          <i class="fas fa-lock"></i> For healthcare professionals only · Always verify with clinical guidelines · Not a substitute for clinical judgment
+        </div>
+        <div class="input-box">
+          <textarea
+            class="input-textarea"
+            id="main-input"
+            placeholder="Describe the clinical presentation or ask a clinical question…"
+            rows="1"
+            onkeydown="handleKey(event)"
+            oninput="autoResize(this)"
+          ></textarea>
+          <div class="input-actions">
+            <button class="send-btn" id="send-btn" onclick="sendMessage()" title="Send">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ADMIN DASHBOARD VIEW -->
+    <div class="view" id="view-admin" style="overflow-y:auto">
+      <div class="panel-view">
+        <div class="panel-header">
+          <h2>Dashboard</h2>
+          <p>Usage analytics and system overview</p>
+        </div>
+        <div class="stats-row">
+          <div class="stat-card">
+            <div class="stat-label">Total Queries</div>
+            <div class="stat-value" id="stat-queries">0</div>
+            <div class="stat-change">This session</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Conversations</div>
+            <div class="stat-value" id="stat-convos">0</div>
+            <div class="stat-change">This session</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Avg Response</div>
+            <div class="stat-value">~3s</div>
+            <div class="stat-change">Estimated</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Model</div>
+            <div class="stat-value" style="font-size:1.1rem;padding-top:6px">GPT-4o</div>
+            <div class="stat-change">OpenAI</div>
+          </div>
+        </div>
+
+        <div class="section-card">
+          <div class="section-card-title"><i class="fas fa-clock"></i> Recent Queries</div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Query</th>
+                  <th>Category</th>
+                  <th>Time</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="query-log">
+                <tr><td colspan="4" style="color:var(--text3);text-align:center;padding:1.5rem">No queries yet</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="section-card">
+          <div class="section-card-title"><i class="fas fa-users"></i> Registered Users</div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Name</th><th>Role</th><th>Joined</th><th>Status</th></tr>
+              </thead>
+              <tbody id="user-table">
+                <tr><td colspan="4" style="color:var(--text3);text-align:center;padding:1.5rem">No users yet</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS VIEW -->
+    <div class="view" id="view-settings" style="overflow-y:auto">
+      <div class="panel-view">
+        <div class="panel-header">
+          <h2>Settings</h2>
+          <p>Configure your CliniqAI experience</p>
+        </div>
+
+        <div class="section-card">
+          <div class="section-card-title"><i class="fas fa-key"></i> AI Configuration</div>
+          <div class="api-notice">
+            <i class="fas fa-exclamation-triangle"></i> Your API key is stored only in your browser's localStorage. Never share it. For production, use a secure backend.
+          </div>
+          <div class="form-group">
+            <label class="form-label">OpenAI API Key</label>
+            <input type="password" class="form-input" id="api-key-input" placeholder="sk-proj-…" style="font-family:monospace;font-size:0.82rem"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Model</label>
+            <div class="role-select-wrapper">
+              <select class="form-input" id="model-select">
+                <option value="gpt-4o">GPT-4o (Recommended)</option>
+                <option value="gpt-4o-mini">GPT-4o Mini (Faster)</option>
+                <option value="gpt-4-turbo">GPT-4 Turbo</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn-primary" onclick="saveApiKey()">Save Configuration</button>
+        </div>
+
+        <div class="section-card">
+          <div class="section-card-title"><i class="fas fa-user"></i> Profile</div>
+          <div class="form-group">
+            <label class="form-label">Display Name</label>
+            <input type="text" class="form-input" id="profile-name" placeholder="Dr. Jane Smith"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Role / Specialty</label>
+            <div class="role-select-wrapper">
+              <select class="form-input" id="profile-role">
+                <option value="doctor">Physician / Doctor</option>
+                <option value="nurse">Nurse / Nurse Practitioner</option>
+                <option value="pharmacist">Pharmacist</option>
+                <option value="student">Medical Student</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn-primary" onclick="saveProfile()">Update Profile</button>
+        </div>
+
+        <div class="section-card">
+          <div class="section-card-title"><i class="fas fa-sliders-h"></i> Preferences</div>
+          <div class="settings-row">
+            <div class="settings-info">
+              <h4>Show Red Flags section</h4>
+              <p>Always include red flags in structured responses</p>
+            </div>
+            <label class="toggle"><input type="checkbox" id="pref-redflags" checked/><span class="toggle-slider"></span></label>
+          </div>
+          <div class="settings-row">
+            <div class="settings-info">
+              <h4>Show References section</h4>
+              <p>Include reference suggestions in responses</p>
+            </div>
+            <label class="toggle"><input type="checkbox" id="pref-references" checked/><span class="toggle-slider"></span></label>
+          </div>
+          <div class="settings-row">
+            <div class="settings-info">
+              <h4>Compact response mode</h4>
+              <p>Shorter, more concise answers</p>
+            </div>
+            <label class="toggle"><input type="checkbox" id="pref-compact"/><span class="toggle-slider"></span></label>
+          </div>
+          <div class="settings-row">
+            <div class="settings-info">
+              <h4>Clinical disclaimer on every message</h4>
+              <p>Show disclaimer in input area</p>
+            </div>
+            <label class="toggle"><input type="checkbox" id="pref-disclaimer" checked/><span class="toggle-slider"></span></label>
+          </div>
+        </div>
+
+        <div class="section-card">
+          <div class="section-card-title"><i class="fas fa-trash"></i> Data</div>
+          <div class="settings-row">
+            <div class="settings-info">
+              <h4>Clear conversation history</h4>
+              <p>Remove all local chat history</p>
+            </div>
+            <button class="btn-ghost" style="padding:8px 16px;font-size:0.8rem" onclick="clearHistory()">Clear History</button>
+          </div>
+          <div class="settings-row">
+            <div class="settings-info">
+              <h4>Sign out</h4>
+              <p>End your current session</p>
+            </div>
+            <button class="btn-ghost" style="padding:8px 16px;font-size:0.8rem;border-color:rgba(255,107,107,0.3);color:var(--accent3)" onclick="confirmLogout()">Sign Out</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main-area -->
+</div><!-- /page-app -->
+
+<!-- ── LOGOUT MODAL ── -->
+<div class="modal-overlay" id="logout-modal">
+  <div class="modal">
+    <h3>Sign Out</h3>
+    <p>Are you sure you want to sign out of CliniqAI?</p>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeModal('logout-modal')">Cancel</button>
+      <button class="btn-primary" onclick="doLogout()">Sign Out</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── SUCCESS TOAST ── -->
+<div id="toast" style="
+  position:fixed;bottom:2rem;right:2rem;
+  background:var(--surface);border:1px solid var(--border2);
+  border-radius:var(--radius-sm);padding:12px 18px;
+  font-size:0.82rem;color:var(--text);
+  box-shadow:var(--shadow);
+  transform:translateY(80px);opacity:0;
+  transition:all 0.3s ease;
+  z-index:200;
+  display:flex;align-items:center;gap:8px;
+"></div>
+
+<script>
+// ══════════════════════════════════════
+// STATE
+// ══════════════════════════════════════
+let state = {
+  user: null,
+  messages: [],
+  conversations: [],
+  totalQueries: 0,
+  totalConvos: 0,
+  queryLog: [],
+  currentView: 'chat',
+  isTyping: false
+};
+
+// ══════════════════════════════════════
+// INIT
+// ══════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  const saved = localStorage.getItem('cliniqai_user');
+  if (saved) {
+    state.user = JSON.parse(saved);
+    initApp();
+  }
+
+  const apiKey = localStorage.getItem('cliniqai_apikey');
+  if (apiKey) document.getElementById('api-key-input').value = apiKey;
+
+  const model = localStorage.getItem('cliniqai_model');
+  if (model) document.getElementById('model-select').value = model;
+});
+
+// ══════════════════════════════════════
+// PAGE NAVIGATION
+// ══════════════════════════════════════
+function showPage(pageId, mode) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(pageId).classList.add('active');
+  if (pageId === 'page-auth' && mode) {
+    if (mode === 'demo') doDemo();
+    else switchAuthTab('login');
+  }
+}
+
+function doDemo() {
+  state.user = { name: 'Demo User', role: 'doctor', email: 'demo@cliniqai.app', demo: true };
+  initApp();
+}
+
+// ══════════════════════════════════════
+// AUTH
+// ══════════════════════════════════════
+function switchAuthTab(tab) {
+  document.getElementById('tab-login').classList.toggle('active', tab === 'login');
+  document.getElementById('tab-register').classList.toggle('active', tab === 'register');
+  document.getElementById('form-login').style.display = tab === 'login' ? '' : 'none';
+  document.getElementById('form-register').style.display = tab === 'register' ? '' : 'none';
+}
+
+function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass = document.getElementById('login-password').value;
+  if (!email || !pass) { showToast('<i class="fas fa-exclamation-triangle"></i> Please fill in all fields'); return; }
+
+  // Check registered users
+  const users = JSON.parse(localStorage.getItem('cliniqai_users') || '[]');
+  const user = users.find(u => u.email === email && u.password === pass);
+
+  if (user) {
+    state.user = user;
+    localStorage.setItem('cliniqai_user', JSON.stringify(user));
+    initApp();
+  } else if (email && pass.length >= 4) {
+    // Auto-create session (demo mode)
+    const u = { name: email.split('@')[0], email, role: 'doctor' };
+    state.user = u;
+    localStorage.setItem('cliniqai_user', JSON.stringify(u));
+    initApp();
+  } else {
+    showToast('<i class="fas fa-exclamation-triangle"></i> Invalid credentials');
+  }
+}
+
+function doRegister() {
+  const name = document.getElementById('reg-name').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const role = document.getElementById('reg-role').value;
+  const pass = document.getElementById('reg-password').value;
+
+  if (!name || !email || !role || !pass) { showToast('<i class="fas fa-exclamation-triangle"></i> Please fill all fields'); return; }
+  if (pass.length < 6) { showToast('<i class="fas fa-exclamation-triangle"></i> Password must be at least 6 characters'); return; }
+
+  const users = JSON.parse(localStorage.getItem('cliniqai_users') || '[]');
+  if (users.find(u => u.email === email)) { showToast('<i class="fas fa-exclamation-triangle"></i> Email already registered'); return; }
+
+  const user = { name, email, role, password: pass, joined: new Date().toLocaleDateString() };
+  users.push(user);
+  localStorage.setItem('cliniqai_users', JSON.stringify(users));
+
+  state.user = user;
+  localStorage.setItem('cliniqai_user', JSON.stringify(user));
+  showToast('<i class="fas fa-check-circle"></i> Account created!');
+  setTimeout(() => initApp(), 500);
+}
+
+function initApp() {
+  const u = state.user;
+  document.getElementById('user-name-display').textContent = u.name || u.email || 'User';
+  document.getElementById('user-role-display').textContent = roleLabel(u.role);
+  document.getElementById('user-avatar').textContent = (u.name || 'U').split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2);
+  document.getElementById('profile-name').value = u.name || '';
+  document.getElementById('profile-role').value = u.role || 'doctor';
+  updateUserTable();
+  showPage('page-app');
+  switchNav('chat');
+}
+
+function roleLabel(r) {
+  const m = {doctor:'Physician',nurse:'Nurse',pharmacist:'Pharmacist',student:'Medical Student',other:'Healthcare Professional'};
+  return m[r] || 'Healthcare Professional';
+}
+
+function confirmLogout() { document.getElementById('logout-modal').classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function doLogout() {
+  localStorage.removeItem('cliniqai_user');
+  state.user = null;
+  state.messages = [];
+  closeModal('logout-modal');
+  showPage('page-landing');
+}
+
+// ══════════════════════════════════════
+// SIDEBAR / NAV
+// ══════════════════════════════════════
+let sidebarCollapsed = false;
+
+function toggleSidebar() {
+  sidebarCollapsed = !sidebarCollapsed;
+  document.getElementById('sidebar').classList.toggle('collapsed', sidebarCollapsed);
+}
+
+function openMobileSidebar() {
+  document.getElementById('sidebar').classList.add('mobile-open');
+  document.getElementById('mobile-overlay').classList.add('open');
+}
+
+function closeMobileSidebar() {
+  document.getElementById('sidebar').classList.remove('mobile-open');
+  document.getElementById('mobile-overlay').classList.remove('open');
+}
+
+function switchNav(nav) {
+  ['chat','admin','settings'].forEach(n => {
+    document.getElementById('nav-'+n)?.classList.remove('active');
+  });
+  document.getElementById('nav-'+nav)?.classList.add('active');
+
+  // Hide all views
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+
+  if (nav === 'chat') {
+    document.getElementById('topbar-title').textContent = 'Clinical Consultation';
+    document.getElementById('topbar-sub').textContent = 'Ask any clinical question';
+    if (state.messages.length === 0) {
+      document.getElementById('view-welcome').classList.add('active');
+    } else {
+      document.getElementById('view-chat').classList.add('active');
+    }
+  } else if (nav === 'admin') {
+    document.getElementById('topbar-title').textContent = 'Dashboard';
+    document.getElementById('topbar-sub').textContent = 'Usage analytics & overview';
+    document.getElementById('view-admin').classList.add('active');
+    updateStats();
+  } else if (nav === 'settings') {
+    document.getElementById('topbar-title').textContent = 'Settings';
+    document.getElementById('topbar-sub').textContent = 'Configure CliniqAI';
+    document.getElementById('view-settings').classList.add('active');
+  }
+
+  state.currentView = nav;
+  closeMobileSidebar();
+}
+
+function switchChatView(t) {
+  switchNav('chat');
+}
+
+function newChat() {
+  if (state.messages.length > 0) {
+    const preview = state.messages[0]?.content?.slice(0,40) || 'Consultation';
+    addChatHistory(preview);
+    state.totalConvos++;
+  }
+  state.messages = [];
+  document.getElementById('messages-area').innerHTML = '';
+  document.getElementById('current-chat-title').textContent = 'New Consultation';
+  switchNav('chat');
+}
+
+function addChatHistory(label) {
+  const div = document.createElement('div');
+  div.className = 'chat-item';
+  div.innerHTML = `<span class="chat-item-icon"><i class="fas fa-comments"></i></span><span class="chat-item-text">${label}…</span>`;
+  div.onclick = () => showToast('<i class="fas fa-lightbulb"></i> Chat history — full persistence coming soon');
+  document.getElementById('chat-history').prepend(div);
+}
+
+// ══════════════════════════════════════
+// CHAT & AI
+// ══════════════════════════════════════
+function usePrompt(text) {
+  document.getElementById('view-welcome').classList.remove('active');
+  document.getElementById('view-chat').classList.add('active');
+  document.getElementById('main-input').value = text;
+  autoResize(document.getElementById('main-input'));
+  document.getElementById('main-input').focus();
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 160) + 'px';
+}
+
+async function sendMessage() {
+  const input = document.getElementById('main-input');
+  const text = input.value.trim();
+  if (!text || state.isTyping) return;
+
+  // Switch to chat view
+  document.getElementById('view-welcome').classList.remove('active');
+  document.getElementById('view-chat').classList.add('active');
+
+  // Add user message
+  state.messages.push({ role: 'user', content: text });
+  appendUserMessage(text);
+
+  input.value = '';
+  input.style.height = 'auto';
+  input.focus();
+
+  // Update title
+  if (state.messages.length === 1) {
+    document.getElementById('current-chat-title').textContent = text.slice(0,35);
+  }
+
+  // Call AI
+  state.isTyping = true;
+  document.getElementById('send-btn').disabled = true;
+  showTyping();
+
+  try {
+    const apiKey = localStorage.getItem('cliniqai_apikey');
+    const model = localStorage.getItem('cliniqai_model') || 'gpt-4o';
+
+    if (!apiKey) {
+      removeTyping();
+      appendAssistantMessage(buildNoKeyResponse());
+      state.isTyping = false;
+      document.getElementById('send-btn').disabled = false;
+      return;
+    }
+
+    const systemPrompt = buildSystemPrompt();
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          ...state.messages
+        ],
+        max_tokens: 2000,
+        temperature: 0.3
+      })
+    });
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.error?.message || 'API error');
+    }
+
+    const data = await response.json();
+    const reply = data.choices[0].message.content;
+
+    state.messages.push({ role: 'assistant', content: reply });
+    removeTyping();
+    appendAssistantMessage(parseStructuredResponse(reply));
+
+    // Log query
+    state.totalQueries++;
+    state.queryLog.unshift({
+      query: text.slice(0,50),
+      category: detectCategory(text),
+      time: new Date().toLocaleTimeString(),
+      status: 'success'
+    });
+
+  } catch (err) {
+    removeTyping();
+    appendAssistantMessage(buildErrorResponse(err.message));
+  }
+
+  state.isTyping = false;
+  document.getElementById('send-btn').disabled = false;
+}
+
+function buildSystemPrompt() {
+  const compact = document.getElementById('pref-compact')?.checked;
+  const showRF = document.getElementById('pref-redflags')?.checked !== false;
+  const showRef = document.getElementById('pref-references')?.checked !== false;
+
+  return `You are CliniqAI, an expert clinical decision support assistant for healthcare professionals. You provide evidence-based, structured medical responses.
+
+IMPORTANT: Always respond in the following structured format using these exact section headers:
+
+**SUMMARY**
+[Concise clinical overview of the condition/question]
+
+**DIFFERENTIAL DIAGNOSIS**
+[Ranked list of differentials with brief rationale]
+
+**RECOMMENDED INVESTIGATIONS**
+[Appropriate labs, imaging, and workup]
+
+**MANAGEMENT PLAN**
+[Step-by-step management including immediate, short-term and follow-up]
+${showRF ? `
+**RED FLAGS**
+[Critical warning signs requiring immediate attention]` : ''}
+${showRef ? `
+**REFERENCES**
+[Relevant guidelines, e.g. NICE, WHO, UpToDate, BNF — general references only]` : ''}
+
+Rules:
+- Be ${compact ? 'concise and brief' : 'thorough but clear'}
+- Use clinical terminology appropriate for healthcare professionals
+- Always include relevant dosing when discussing medications
+- Acknowledge uncertainty where appropriate
+- Always end with: "<i class=\"fas fa-exclamation-triangle\"></i> This is a clinical decision support tool. Always correlate with clinical findings and local guidelines."`;
+}
+
+function buildNoKeyResponse() {
+  return `<div style="padding:0.5rem 0">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:1rem;color:var(--gold);font-size:0.85rem;font-weight:500">
+      <i class="fas fa-cog"></i> API Key Required
+    </div>
+    <p style="font-size:0.85rem;color:var(--text2);line-height:1.7;margin-bottom:1rem">
+      To receive AI-powered clinical responses, please add your OpenAI API key in <strong style="color:var(--text)">Settings</strong>.
+    </p>
+    <ol style="font-size:0.82rem;color:var(--text3);line-height:2;padding-left:1.2rem">
+      <li>Go to <strong style="color:var(--text2)">Settings</strong> (<i class="fas fa-cog"></i> in the sidebar)</li>
+      <li>Enter your OpenAI API key (starts with <code style="background:var(--bg);padding:2px 6px;border-radius:4px">sk-</code>)</li>
+      <li>Click <strong style="color:var(--text2)">Save Configuration</strong></li>
+      <li>Return here and ask your question</li>
+    </ol>
+    <p style="font-size:0.75rem;color:var(--text3);margin-top:1rem">
+      Don't have an API key? Get one at <a href="https://platform.openai.com/api-keys" target="_blank" style="color:var(--accent)">platform.openai.com</a>
+    </p>
+  </div>`;
+}
+
+function buildErrorResponse(msg) {
+  return `<div style="color:var(--accent3);font-size:0.85rem;padding:0.25rem 0">
+    <i class="fas fa-exclamation-triangle"></i> <strong>Error:</strong> ${msg}<br/>
+    <span style="color:var(--text3);font-size:0.8rem">Please check your API key and try again.</span>
+  </div>`;
+}
+
+function parseStructuredResponse(text) {
+  const sections = [
+    { key: 'SUMMARY', cls: 'rs-summary', icon: '<i class="fas fa-clipboard-list"></i>', label: 'Summary' },
+    { key: 'DIFFERENTIAL DIAGNOSIS', cls: 'rs-differential', icon: '<i class="fas fa-dna"></i>', label: 'Differential Diagnosis' },
+    { key: 'RECOMMENDED INVESTIGATIONS', cls: 'rs-investigations', icon: '<i class="fas fa-microscope"></i>', label: 'Investigations' },
+    { key: 'MANAGEMENT PLAN', cls: 'rs-management', icon: '<i class="fas fa-pills"></i>', label: 'Management Plan' },
+    { key: 'RED FLAGS', cls: 'rs-redflags', icon: '<i class="fas fa-exclamation-triangle"></i>', label: 'Red Flags' },
+    { key: 'REFERENCES', cls: 'rs-references', icon: '<i class="fas fa-book"></i>', label: 'References' },
+  ];
+
+  // Check if structured
+  const hasStructure = sections.some(s => text.includes(`**${s.key}**`));
+  if (!hasStructure) {
+    return `<div style="font-size:0.875rem;line-height:1.7;color:var(--text2)">${escapeHtml(text).replace(/\n/g,'<br/>')}</div>`;
+  }
+
+  let html = '';
+  for (let i = 0; i < sections.length; i++) {
+    const sec = sections[i];
+    const nextKey = sections[i+1]?.key;
+    const regex = new RegExp(`\\*\\*${sec.key}\\*\\*([\\s\\S]*?)${nextKey ? `(?=\\*\\*${nextKey}\\*\\*)` : '$'}`, 'i');
+    const match = text.match(regex);
+    if (!match) continue;
+
+    let content = match[1].trim();
+    if (!content) continue;
+
+    let bodyHtml = '';
+    if (sec.cls === 'rs-redflags') {
+      // Red flags as alert items
+      const lines = content.split('\n').filter(l => l.trim());
+      bodyHtml = lines.map(l => `<div class="redflag-item">${escapeHtml(l.replace(/^[-•*]\s*/,''))}</div>`).join('');
+    } else {
+      // Parse list items
+      const lines = content.split('\n').filter(l => l.trim());
+      const hasBullets = lines.some(l => /^[-•*\d]/.test(l.trim()));
+      if (hasBullets) {
+        bodyHtml = '<ul>' + lines.map(l => `<li>${escapeHtml(l.replace(/^[-•*\d.]\s*/,'').replace(/\*\*(.*?)\*\*/g,'<strong style="color:var(--text)">$1</strong>'))}</li>`).join('') + '</ul>';
+      } else {
+        bodyHtml = `<p>${escapeHtml(content).replace(/\n\n/g,'</p><p>').replace(/\n/g,'<br/>').replace(/\*\*(.*?)\*\*/g,'<strong style="color:var(--text)">$1</strong>')}</p>`;
+      }
+    }
+
+    html += `
+      <div class="response-section ${sec.cls}">
+        <div class="response-section-header">
+          <div class="rs-icon">${sec.icon}</div>
+          ${sec.label}
+        </div>
+        <div class="response-section-body">${bodyHtml}</div>
+      </div>`;
+  }
+
+  // Disclaimer
+  const disclaimer = text.match(/<i class="fas fa-exclamation-triangle"><\/i> This is a clinical.*/);
+  if (disclaimer) {
+    html += `<div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);font-size:0.75rem;color:var(--text3);">${escapeHtml(disclaimer[0])}</div>`;
+  }
+
+  return html || `<div style="font-size:0.875rem;line-height:1.7;color:var(--text2)">${escapeHtml(text).replace(/\n/g,'<br/>')}</div>`;
+}
+
+function appendUserMessage(text) {
+  const area = document.getElementById('messages-area');
+  const div = document.createElement('div');
+  div.className = 'msg user';
+  div.innerHTML = `
+    <div class="msg-body">${escapeHtml(text)}</div>
+    <div class="msg-avatar"><i class="fas fa-user"></i></div>
+  `;
+  area.appendChild(div);
+  area.scrollTop = area.scrollHeight;
+}
+
+function appendAssistantMessage(htmlContent) {
+  const area = document.getElementById('messages-area');
+  const div = document.createElement('div');
+  div.className = 'msg assistant';
+  div.innerHTML = `
+    <div class="msg-avatar"><i class="fas fa-user-md"></i></div>
+    <div>
+      <div class="msg-body">${htmlContent}</div>
+      <div class="msg-meta">
+        <span class="msg-time">${new Date().toLocaleTimeString()}</span>
+        <div class="msg-actions">
+          <button class="msg-action-btn" onclick="copyMsg(this)" title="Copy"><i class="fas fa-clipboard"></i></button>
+          <button class="msg-action-btn" title="Helpful"><i class="fas fa-thumbs-up"></i></button>
+          <button class="msg-action-btn" title="Not helpful"><i class="fas fa-thumbs-down"></i></button>
+        </div>
+      </div>
+    </div>
+  `;
+  area.appendChild(div);
+  area.scrollTop = area.scrollHeight;
+}
+
+function showTyping() {
+  const area = document.getElementById('messages-area');
+  const div = document.createElement('div');
+  div.className = 'typing-indicator';
+  div.id = 'typing-indicator';
+  div.innerHTML = `
+    <div class="msg-avatar" style="background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0a0d12;width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:0.85rem;flex-shrink:0"><i class="fas fa-user-md"></i></div>
+    <div class="typing-dots">
+      <span class="typing-dot"></span>
+      <span class="typing-dot"></span>
+      <span class="typing-dot"></span>
+    </div>
+  `;
+  area.appendChild(div);
+  area.scrollTop = area.scrollHeight;
+}
+
+function removeTyping() {
+  document.getElementById('typing-indicator')?.remove();
+}
+
+function detectCategory(text) {
+  const t = text.toLowerCase();
+  if (/chest|cardiac|heart|mi|ecg/.test(t)) return '<span class="badge badge-red">Cardiology</span>';
+  if (/child|paediatric|infant|neonate/.test(t)) return '<span class="badge badge-blue">Paediatrics</span>';
+  if (/neuro|headache|stroke|seizure/.test(t)) return '<span class="badge badge-yellow">Neurology</span>';
+  if (/drug|medication|dose|pharma/.test(t)) return '<span class="badge badge-green">Pharmacology</span>';
+  if (/emergency|acute|urgent/.test(t)) return '<span class="badge badge-red">Emergency</span>';
+  return '<span class="badge badge-blue">General</span>';
+}
+
+function copyMsg(btn) {
+  const msgBody = btn.closest('.msg assistant')?.querySelector('.msg-body') || btn.closest('div').parentElement.querySelector('.msg-body');
+  navigator.clipboard.writeText(msgBody?.innerText || '').then(() => showToast('<i class="fas fa-check-circle"></i> Copied to clipboard'));
+}
+
+// ══════════════════════════════════════
+// SETTINGS
+// ══════════════════════════════════════
+function saveApiKey() {
+  const key = document.getElementById('api-key-input').value.trim();
+  const model = document.getElementById('model-select').value;
+  if (!key) { showToast('<i class="fas fa-exclamation-triangle"></i> Please enter an API key'); return; }
+  localStorage.setItem('cliniqai_apikey', key);
+  localStorage.setItem('cliniqai_model', model);
+  showToast('<i class="fas fa-check-circle"></i> Configuration saved');
+}
+
+function saveProfile() {
+  const name = document.getElementById('profile-name').value.trim();
+  const role = document.getElementById('profile-role').value;
+  if (!name) { showToast('<i class="fas fa-exclamation-triangle"></i> Please enter a name'); return; }
+  state.user = { ...state.user, name, role };
+  localStorage.setItem('cliniqai_user', JSON.stringify(state.user));
+  document.getElementById('user-name-display').textContent = name;
+  document.getElementById('user-role-display').textContent = roleLabel(role);
+  document.getElementById('user-avatar').textContent = name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+  showToast('<i class="fas fa-check-circle"></i> Profile updated');
+}
+
+function clearHistory() {
+  state.messages = [];
+  state.queryLog = [];
+  document.getElementById('messages-area').innerHTML = '';
+  document.getElementById('chat-history').innerHTML = '';
+  document.getElementById('view-chat').classList.remove('active');
+  document.getElementById('view-welcome').classList.add('active');
+  showToast('<i class="fas fa-trash"></i> History cleared');
+}
+
+// ══════════════════════════════════════
+// ADMIN / STATS
+// ══════════════════════════════════════
+function updateStats() {
+  document.getElementById('stat-queries').textContent = state.totalQueries;
+  document.getElementById('stat-convos').textContent = state.totalConvos;
+
+  const tbody = document.getElementById('query-log');
+  if (state.queryLog.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" style="color:var(--text3);text-align:center;padding:1.5rem">No queries yet</td></tr>';
+  } else {
+    tbody.innerHTML = state.queryLog.slice(0,8).map(q => `
+      <tr>
+        <td style="color:var(--text)">${q.query}…</td>
+        <td>${q.category}</td>
+        <td style="color:var(--text3)">${q.time}</td>
+        <td><span class="badge badge-green"><i class="fas fa-check"></i> OK</span></td>
+      </tr>
+    `).join('');
+  }
+}
+
+function updateUserTable() {
+  const users = JSON.parse(localStorage.getItem('cliniqai_users') || '[]');
+  const tbody = document.getElementById('user-table');
+  if (users.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" style="color:var(--text3);text-align:center;padding:1.5rem">No registered users yet</td></tr>';
+  } else {
+    tbody.innerHTML = users.map(u => `
+      <tr>
+        <td style="color:var(--text)">${u.name}</td>
+        <td><span class="badge badge-blue">${roleLabel(u.role)}</span></td>
+        <td style="color:var(--text3)">${u.joined || '—'}</td>
+        <td><span class="badge badge-green">Active</span></td>
+      </tr>
+    `).join('');
+  }
+}
+
+// ══════════════════════════════════════
+// UTILITIES
+// ══════════════════════════════════════
+function escapeHtml(text) {
+  return text
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+
+let toastTimeout;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.transform = 'translateY(0)';
+  t.style.opacity = '1';
+  clearTimeout(toastTimeout);
+  toastTimeout = setTimeout(() => {
+    t.style.transform = 'translateY(80px)';
+    t.style.opacity = '0';
+  }, 2800);
+}
+</script>
+</body>
+</html>
